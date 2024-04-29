@@ -1,0 +1,238 @@
+
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Document</title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+     <style>
+        /* Additional CSS for styling */
+        .list-group-item {
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: .25rem;
+    margin-bottom: 10px;
+    background-color: #8dbeef;
+    transition: transform 0.3s ease;
+}
+
+.list-group-item:hover {
+    font-weight: 1000;
+    background-image: linear-gradient(200deg,yellow 0%,red 100%);
+    transform: scale(1.1); /* Increase the scale slightly on hover */
+}
+
+        .modal-header {
+            background-color: #343a40;
+            color: #fff;
+            border-bottom: none;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .book-item {
+            margin-bottom: 10px;
+        }
+
+        .btn-return {
+            margin-top: 10px;
+        }
+
+        .book-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+ </head>
+ <body>
+    <div class="container">
+     <div class="col">
+        <h2 class="d-flex justify-content-between align-items-center py-3 bg-dark text-light">
+            <span class="text-center flex-grow-1">List of Students</span>
+            <Button class="btn btn-primary m-2"><a class="nav-link text-light" href="./index.html">Home</a></Button>
+            <Button class="btn btn-primary m-2"><a class="nav-link text-light" href="./books.html">Assign Books</a></Button>
+        </h2>
+        
+                 <ul id="student-list" class="list-group"></ul>
+     </div>
+ 
+     
+     <div class="modal fade" id="bookModal" tabindex="-1" aria-labelledby="bookModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+             <div class="modal-content">
+                 <div class="modal-header">
+                     <h5 class="modal-title" id="bookModalLabel">Borrowed Books</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <div class="modal-body" id="bookModalBody">
+                     <!-- Book details will be populated here -->
+                 </div>
+             </div>
+         </div>
+     </div>
+    </div>
+    <div id="toastContainer" aria-live="polite" aria-atomic="true" style="position: fixed; bottom: 0; right: 0; margin: 30px; z-index: 1000;"></div>
+
+ </body>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+ <script>
+
+function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer');
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type}`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        const toastBody = document.createElement('div');
+        toastBody.className = 'toast-body';
+        toastBody.textContent = message;
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'btn-close ms-auto me-2';
+        closeButton.setAttribute('data-bs-dismiss', 'toast');
+        closeButton.setAttribute('aria-label', 'Close');
+
+        toast.appendChild(toastBody);
+        toast.appendChild(closeButton);
+        toastContainer.appendChild(toast);
+
+        // Initialize Bootstrap toast and show it
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+     async function fetchStudents() {
+         try {
+             const response = await fetch('/api/books/students/borrow');
+             const students = await response.json();
+          
+             const studentList = document.getElementById('student-list');
+             studentList.innerHTML = '';
+             students.forEach(student => {
+                 const li = document.createElement('li');
+                 li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                 
+                 const name = document.createElement('h5');
+                 name.classList.add('mb-1');
+                 name.textContent = `Name: ${student.name}`;
+                 
+                 const email = document.createElement('small');
+                 email.textContent = `Email: ${student.email}`;
+ 
+                 const regNo = document.createElement('small');
+                 regNo.textContent = `Reg No: ${student.regNo}`;
+ 
+                 const borrowedBooks = document.createElement('medium');
+                 borrowedBooks.textContent = `Borrowed Books: ${student.borrowedBooks.length}`;
+                 borrowedBooks.classList.add('text-success');
+                 if (student.borrowedBooks.length >= 1) {
+                    borrowedBooks.classList.add('text-danger');
+                }
+
+                 const viewButton = document.createElement('button');
+                 viewButton.textContent = 'View Details';
+                 viewButton.classList.add('btn', 'btn-sm', 'btn-primary');
+                 
+                 viewButton.setAttribute('data-bs-toggle', 'popover');
+                 viewButton.setAttribute('data-bs-placement', 'left');
+                 viewButton.setAttribute('data-bs-trigger', 'hover'); 
+                 viewButton.setAttribute('data-bs-content', student.borrowedBooks.map(book => `${book.title} by ${book.author}`).join('<br>'));
+                 const popover = new bootstrap.Popover(viewButton, {
+                     trigger: 'hover', 
+                     boundary: 'viewport', 
+                     html: true 
+                 });
+                 viewButton.setAttribute('data-bs-toggle', 'modal');
+                 viewButton.setAttribute('data-bs-target', '#bookModal');
+                 viewButton.addEventListener('click', () => populateBookModal(student.borrowedBooks,student.regNo));
+ 
+                 li.appendChild(name);
+                 li.appendChild(email);
+                 li.appendChild(regNo);
+                 li.appendChild(borrowedBooks);
+                 li.appendChild(viewButton);
+                 studentList.appendChild(li);
+             });
+         } catch (error) {
+             console.error('Error:', error.message);
+         }
+     }
+ 
+     function populateBookModal(books,regNo) {
+         const modalBody = document.getElementById('bookModalBody');
+         modalBody.innerHTML = '';
+ 
+         books.forEach(book => {
+             const bookRow = document.createElement('div');
+             bookRow.classList.add('book-row');
+ 
+             const bookName = document.createElement('div');
+             bookName.textContent = `${book.title} by ${book.author}`;
+ 
+             const returnButton = document.createElement('button');
+             returnButton.textContent = 'Return';
+             returnButton.classList.add('btn', 'btn-sm', 'btn-danger', 'me-2', 'btn-return');
+             returnButton.addEventListener('click', () => returnBook(regNo,book._id));
+             
+             bookRow.appendChild(bookName);
+             bookRow.appendChild(returnButton);
+             modalBody.appendChild(bookRow);
+         });
+     }
+ 
+    
+
+     async function returnBook(regNo, bookId) {
+         console.log(regNo,bookId);
+         try {
+             const response = await fetch(`/api/books/${bookId}/return`, {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 },
+                 body: JSON.stringify({ regNo }) 
+             });
+             const data = await response.json();
+             if (response.ok) {
+                 $('#bookModal').modal('hide'); 
+                 
+                 showToast("Book successfully returned",'success');
+                 fetchStudents();
+             } else {
+                 throw new Error(data.message);
+                 showToast(error.message,'error');
+             }
+         } catch (error) {
+             console.error('Error:', error.message);
+             showToast(error.message,'error');
+         }
+     }
+ 
+     async function fetchBooks() {
+         const response = await fetch('/api/books');
+         const books = await response.json();
+         books.forEach(book => {
+             const li = document.createElement('li');
+             li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+         });
+     }
+     $('#bookModal').on('hidden.bs.modal', function () {
+        fetchStudents(); 
+    });
+ 
+     fetchBooks();
+     fetchStudents();
+ </script>
+ </html>
+ 
+
+
+ 
