@@ -94,7 +94,7 @@
                     </button>
                 </form>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6"> 
                 <h2>Add a New Student</h2>
                 <form id="add-student-form">
                     <div class="mb-3">
@@ -172,7 +172,7 @@
         function showErrorMessage(message) {
             alert(message);
         }
-
+//books input
         document.getElementById('add-book-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const form = event.target;
@@ -193,7 +193,7 @@
                 });
             }
         });
-
+//students input
         document.getElementById('add-student-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const form = event.target;
