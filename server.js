@@ -18,7 +18,7 @@ app.use('/api/books', bookRoutes);
 app.use(express.static('public'));
 
 // Connect to MongoDB
-mongoose.connect("mongodb+srv://bhargav1:bhargav@cluster0.trk3grz.mongodb.net/books1")
+mongoose.connect("mongodb+srv://bhargav:bhargav@cluster0.c4542.mongodb.net/")
     .then(() => {
         console.log('Connected to MongoDB');
         app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
